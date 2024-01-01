@@ -1,0 +1,6 @@
+config {
+  type: "declaration",
+  database: "valeo-cp0512-acp3",
+  schema: "Versioning",
+  name: "VW_views_versioning",
+}
