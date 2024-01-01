@@ -1,0 +1,2 @@
+config {  type: "view" }
+SELECT * FROM `valeo-cp0512-acp3.bq_integration_eu.BQ_Projects_Sync`
