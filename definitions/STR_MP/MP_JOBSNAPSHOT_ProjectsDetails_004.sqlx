@@ -1,11 +1,16 @@
-config {  type: "view" }
+config {
+    type: "view"
+}
+
 SELECT
- * EXCEPT(ROW,record_deleted)
-FROM 
- (
-   SELECT
+  * EXCEPT(ROW,
+    record_deleted)
+FROM (
+  SELECT
     *,
     ROW_NUMBER() OVER (PARTITION BY id ORDER BY sync_time DESC) AS ROW,
-   FROM ${ref("MP_GETVIEW_Projects_003")} 
- )
-WHERE ROW=1 AND record_deleted =FALSE
+  FROM
+    `bq_integration_eu.BQ_Projects_Sync` )
+WHERE
+  ROW=1
+  AND record_deleted =FALSE
