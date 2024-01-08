@@ -1,4 +1,4 @@
-config {  type: "view" }
+config {  type: "table" }
 SELECT
  * EXCEPT(ROW,record_deleted)
 FROM 
