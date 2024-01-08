@@ -6,6 +6,6 @@ FROM
    SELECT
     *,
     ROW_NUMBER() OVER (PARTITION BY id ORDER BY sync_time DESC) AS ROW,
-   FROM ${ref("MP_GETVIEW_Projects_003")} 
+   FROM ${ref("MP_GETVIEW_Projects_001")} 
  )
 WHERE ROW=1 AND record_deleted =FALSE
