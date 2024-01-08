@@ -3,7 +3,7 @@ SELECT
  project_id,
  ROW,
  REGEXP_REPLACE(pma_comments, r'<.*?>', '') AS pma_comments,
- DATE(last_monthly_assessment) AS pma_last_monthly_assessment,
+ DATE(pma_last_monthly_assessment) AS pma_last_monthly_assessment,
  pma_psc_review
 FROM
  (
