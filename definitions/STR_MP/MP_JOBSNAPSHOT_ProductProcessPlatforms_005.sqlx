@@ -1,0 +1,10 @@
+-- - DataStudio Dashboards_Masterdata Productprocessplatforms Snapshot_valeo.cp0512-dts.technical@valeo.com
+SELECT product_process_platform,description
+FROM (
+SELECT product_process_platform,description,
+ROW_NUMBER() OVER(PARTITION BY id ORDER BY sync_time DESC ) AS row_num,
+FROM
+${ref("MP_GETVIEW_ProductProcessPlatforms_004")}
+)
+WHERE
+row_num =1
