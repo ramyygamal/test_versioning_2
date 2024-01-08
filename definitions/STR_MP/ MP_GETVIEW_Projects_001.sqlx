@@ -1,0 +1,2 @@
+config {  type: "view" }
+SELECT * FROM `bq_integration_eu.BQ_Projects_Sync`
