@@ -1,0 +1,48 @@
+config {  type: "view" }
+WITH Proj AS 
+(
+  SELECT * FROM ${ref("MP_JOBCALCULATION_Projects_006")} --`Analytics_calculations.MP_BQ_Projects_Sync_calc` 
+),
+
+pma_details AS 
+(
+  SELECT * FROM ${ref("MP_JOBCALCULATION_CLPP_007")} --`Analytics_calculations.MP_pma_clpp_extraction`  --
+),
+
+platforms_organizations_table AS 
+(
+  SELECT project_id, split(platforms_organizations,',') AS platforms_organization
+  FROM ${ref("MP_JOBSNAPSHOT_Projects_002")} --`Analytics_snapshots.MP_BQ_Projects_Sync`  -- 
+  WHERE platforms_organizations IS NOT NULL 
+),
+
+projects_platforms_organizations_table AS
+(
+  SELECT project_id, platforms_organization
+  FROM platforms_organizations_table
+  CROSS JOIN UNNEST(platforms_organizations_table.platforms_organization) AS platforms_organization
+),
+
+projects_platforms_organizations_result AS
+(
+  SELECT project_id,STRING_AGG(concat(platforms_organization, ' - ',description)) AS platforms_organizations_descriptions  
+  FROM projects_platforms_organizations_table , ${ref("MP_JOBSNAPSHOT_ProductProcessPlatforms_005")} --`Analytics_snapshots.Product_process_platforms` --
+  WHERE platforms_organization=product_process_platform GROUP BY project_id
+),
+
+proj_clpp AS 
+(
+  SELECT pma_details.pma_psc_review AS psc_review,
+   pma_last_monthly_assessment AS last_monthly_assessment,
+   pma_comments AS project_assessment_comments,
+   Proj.* EXCEPT (psc_review,project_assessment_comments,last_monthly_assessment),
+   psc_review AS psc_review_old,
+   project_assessment_comments AS project_assessment_comments_old,
+   pma_last_monthly_assessment AS pma_last_monthly_assessment_old,
+   TIMESTAMP_MILLIS(Proj.sync_time) AS Project_update_date,
+   platforms_organizations_descriptions 
+  FROM Proj 
+  LEFT JOIN pma_details ON Proj.project_id=pma_details.project_id 
+  LEFT JOIN projects_platforms_organizations_result ON Proj.project_id=projects_platforms_organizations_result.project_id
+)
+SELECT * FROM proj_clpp 
