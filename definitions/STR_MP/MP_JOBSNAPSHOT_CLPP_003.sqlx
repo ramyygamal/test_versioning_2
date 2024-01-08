@@ -5,5 +5,5 @@ config {  type: "view" }SELECT
       *,
       ROW_NUMBER() OVER (PARTITION BY id ORDER BY sync_time DESC) AS ROW
     FROM
-      ${ref("MP_GETVIEW_Projects_001")}
+      ${ref("MP_GETVIEW_CLPP_009")}
 ) WHERE ROW=1
