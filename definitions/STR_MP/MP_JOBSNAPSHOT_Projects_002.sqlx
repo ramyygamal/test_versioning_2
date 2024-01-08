@@ -1,6 +1,13 @@
 config {  type: "view" }
 SELECT
- * EXCEPT(ROW,record_deleted)
+ * EXCEPT(ROW,record_deleted,bg,cyber_security_level),
+ CASE 
+ WHEN bg_code='10B' THEN 'CDA'
+ WHEN bg_code='20B' THEN 'PTS'
+ WHEN bg_code='30B' THEN 'THS'
+ WHEN bg_code='40B' THEN 'VIS'
+ ELSE bg
+ END AS bg
 FROM 
  (
    SELECT
