@@ -1,4 +1,4 @@
-config {  type: "view" }
+config {  type: "operations" }
 CREATE OR REPLACE TABLE FUNCTION `STR_MP_test.STR_MP_Projects_007_Secured_ACP3`(useremail_param STRING) AS (
 WITH
 endusercustomers as (
