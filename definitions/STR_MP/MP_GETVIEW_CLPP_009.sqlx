@@ -1,2 +1,9 @@
-config {  type: "view" }
-SELECT * FROM `bq_integration_eu.BQProjectCLPP`
+config {
+    type: "view",
+    
+}
+--schema: "test"
+SELECT
+  *
+FROM
+  `bq_integration_eu.BQProjectCLPP`
