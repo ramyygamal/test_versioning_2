@@ -1,0 +1,146 @@
+config {  type: "view" }
+CREATE OR REPLACE TABLE FUNCTION `STR_MP_test.STR_MP_Projects_007_Secured_ACP3`(useremail_param STRING) AS (
+WITH
+endusercustomers as (
+SELECT * from Analytics_snapshots.End_User_Customers
+),
+q as (Select user_email,role,sales_group_code,sales_group_name from (
+SELECT
+  *,
+  STRPOS(end_user_customers,sales_group_code) as pos
+FROM
+  `bq_integration_eu.users_permissions`,
+  endusercustomers
+WHERE
+  useremail_param=user_email and project_type is null and bg is null and pg is null and pl is null and ro is null and entity is null 
+  and orgalocs is null and (role='PPM' or role='BCP' or role='BDAP')
+ ) where (pos>0 and end_user_customers is not null) or (end_user_customers is null) ) ,
+security_endusercustomers as (
+
+select distinct * from q
+),
+ppp as (
+SELECT * from ${ref("MP_JOBSNAPSHOT_ProductProcessPlatforms_005")}--Analytics_snapshots.Product_process_platforms --${ref()}
+),
+q1 as (
+Select user_email,role,product_process_platform,description from (
+SELECT
+  *,
+  STRPOS(product_process_platforms,product_process_platform) as pos
+FROM
+  `bq_integration_eu.users_permissions`,
+  ppp
+WHERE
+  useremail_param=user_email and project_type is null and bg is null and pg is null and pl is null and ro is null and entity is null 
+  and orgalocs is null and (role='PPM' or role='BCP' or role='BDAP')
+ ) where (pos>0 and product_process_platforms is not null) or (product_process_platforms is null) ),
+ 
+security_productprocessplateforms as (
+
+select distinct * from q1
+ 
+ 
+),
+  proj AS (SELECT * FROM ${ref("MP_DATASOURCE_Projects_008")}  ),
+----------- PPM ---------------
+filter_ppm_projecttype as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and role='PPM' and proj.project_type=p.project_type),
+filter_ppm_perimeter as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and role='PPM' and (proj.bg_code=p.bg or proj.pg_code=p.pg or proj.pl_code=p.pl or proj.ro_code=p.ro 
+or proj.entity=p.entity or proj.developement_center=p.orgalocs  or proj.first_manufacturing_site=p.orgalocs)),
+filter_ppm_restrictive_endusercustomer as (
+SELECT distinct project_code FROM security_endusercustomers p, proj where
+p.user_email = useremail_param  and role='PPM' 
+and (proj.end_user_customer_sales_group_code=p.sales_group_code or proj.end_user_customer_sales_group_code is NULL or proj.end_user_customer_sales_group_code ='NA')),
+filter_ppm_restrictive_product as (
+SELECT distinct project_code FROM security_productprocessplateforms p, proj where
+p.user_email = useremail_param  and role='PPM' 
+and (proj.product_process_platform_code=p.product_process_platform or proj.product_process_platform_code is NULL)),
+ppm_security as (select * from filter_ppm_projecttype INTERSECT DISTINCT (select * from filter_ppm_perimeter INTERSECT DISTINCT 
+(select * from filter_ppm_restrictive_endusercustomer  INTERSECT DISTINCT (select * from filter_ppm_restrictive_product  ) )  )),
+filter_bda_projecttype as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and role='BDAP' and proj.project_type=p.project_type),
+filter_bda_perimeter as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and role='BDAP' and (proj.bg_code=p.bg or proj.pg_code=p.pg or proj.pl_code=p.pl or proj.ro_code=p.ro 
+or proj.entity=p.entity or proj.developement_center=p.orgalocs or proj.first_manufacturing_site=p.orgalocs)),
+filter_bda_restrictive_endusercustomer as (
+SELECT distinct project_code FROM security_endusercustomers p, proj where
+p.user_email = useremail_param  and role='BDAP' 
+and (proj.end_user_customer_sales_group_code=p.sales_group_code or proj.end_user_customer_sales_group_code is NULL or proj.end_user_customer_sales_group_code ='NA') ),
+filter_bda_restrictive_product as (
+SELECT distinct project_code FROM security_productprocessplateforms p, proj where
+p.user_email = useremail_param  and role='BDAP' 
+and (proj.product_process_platform_code=p.product_process_platform or proj.product_process_platform_code is NULL)),
+bda_security as (select * from filter_bda_projecttype INTERSECT DISTINCT (select * from filter_bda_perimeter INTERSECT DISTINCT 
+(select * from filter_bda_restrictive_endusercustomer) INTERSECT DISTINCT (select * from filter_bda_restrictive_product) )),
+
+filter_bc_projecttype as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and role='BCP' and proj.project_type=p.project_type),
+filter_bc_perimeter as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and role='BCP' and (proj.bg_code=p.bg or proj.pg_code=p.pg or proj.pl_code=p.pl or proj.ro_code=p.ro 
+or proj.entity=p.entity or proj.developement_center=p.orgalocs or proj.first_manufacturing_site=p.orgalocs)),
+filter_bc_restrictive_endusercustomer as (
+SELECT distinct project_code FROM security_endusercustomers p, proj where
+p.user_email = useremail_param  and role='BCP' 
+and (proj.end_user_customer_sales_group_code=p.sales_group_code or proj.end_user_customer_sales_group_code is NULL or proj.end_user_customer_sales_group_code ='NA')),
+filter_bc_restrictive_product as (
+SELECT distinct project_code FROM security_productprocessplateforms p, proj where
+p.user_email = useremail_param  and role='BCP' 
+and (proj.product_process_platform_code=p.product_process_platform or proj.product_process_platform_code is NULL)),
+bc_security as (select * from filter_bc_projecttype INTERSECT DISTINCT (select * from filter_bc_perimeter INTERSECT DISTINCT 
+(select * from filter_bc_restrictive_endusercustomer  INTERSECT DISTINCT (select * from filter_bc_restrictive_product  ) )  )),
+
+sccl_team_members_split as (SELECT project_code, split(sccl_team_members,',') AS sccl_team_member FROM (
+SELECT project_code,sccl_team_members FROM ${ref("MP_JOBSNAPSHOT_Projects_002")} where sccl_team_members is not null) ),
+sccl_team_members_projects as(select distinct project_code from sccl_team_members_split where useremail_param in unnest(sccl_team_member) ),
+
+
+clpp_editors_split as (SELECT project_code, split(clpp_editors,',') AS clpp_editor FROM (
+SELECT project_code,clpp_editors FROM ${ref("MP_JOBSNAPSHOT_Projects_002")} where clpp_editors is not null) ),
+clpp_editors_projects as(select distinct project_code from clpp_editors_split where useremail_param in unnest(clpp_editor) ),
+
+sscl_editors_split as (SELECT project_code, split(sscl_editors,',') AS sscl_editor FROM (
+SELECT project_code,sscl_editors FROM ${ref("MP_JOBSNAPSHOT_Projects_002")} where sscl_editors is not null) ),
+sscl_editors_projects as(select distinct project_code from sscl_editors_split where useremail_param in unnest(sscl_editor) ),
+
+
+egate_viewers_split as (SELECT project_code, split(other_r_and_d_team_members,',') AS other_r_and_d_team_member FROM (
+SELECT project_code,other_r_and_d_team_members FROM ${ref("MP_JOBSNAPSHOT_Projects_002")} where other_r_and_d_team_members is not null) ),
+egate_viewers_projects as(select distinct project_code from egate_viewers_split where useremail_param in unnest(other_r_and_d_team_member) ),
+
+security1 as (
+SELECT distinct project_code FROM `bq_integration_eu.users_permissions` p, proj where
+p.user_email = useremail_param  and (role='BO' or project_manager=useremail_param or r_d_business_controller_approver=useremail_param 
+or projects_mgr_or_dir_approver=useremail_param or r_and_d_ptm=useremail_param or purchasing_ptm=useremail_param or quality_ptm=useremail_param 
+or process_ptm=useremail_param or supply_chain_ptm=useremail_param or first_project_launch_manager=useremail_param 
+or project_launch_manager_2=useremail_param or project_launch_manager_3=useremail_param or project_launch_manager_4=useremail_param
+ or project_launch_manager_5=useremail_param or other_team_member_1=useremail_param or other_team_member_2=useremail_param 
+ or other_team_member_3=useremail_param or other_team_member_4=useremail_param or other_team_member_5=useremail_param 
+ or function_mgrdir_process=useremail_param or function_mgrdir_purchasing=useremail_param or function_mgrdir_quality=useremail_param 
+ or function_mgrdir_r_and_d=useremail_param or function_mgrdir_supply_chain=useremail_param or project_assessor=useremail_param 
+ or director_r_and_d=useremail_param or director_project=useremail_param )),
+
+projects_security as (select * from security1 Union distinct select * from bda_security Union distinct select * from ppm_security 
+Union distinct select * from bc_security Union distinct select * from sccl_team_members_projects Union distinct select * from egate_viewers_projects
+Union distinct select * from sscl_editors_projects Union distinct select * from clpp_editors_projects ),
+
+AREG_links AS (SELECT 
+project_id,
+STRING_AGG(url) AS URL
+FROM `Analytics_snapshots.MP_BQ_FavouriteLink`
+GROUP BY project_id),
+
+result as (
+SELECT main.* EXCEPT(unique_key_value, id,standard_milestones,additional_milestones,closed_approval_status_1,
+closed_approval_status_2,collaborative_funding_project,new_project_assessment_comments) , URL as areg_link FROM
+  `Analytics_dashboards.MP_projects_datasource` main left join AREG_links on main.project_id=AREG_links.project_id)
+
+
+select result.* from result , projects_security where result.project_code=projects_security.project_code
+)
